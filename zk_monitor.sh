@@ -4,7 +4,7 @@
 #  description: script to monitor zookeeper cluster
 #        usage: zk_monitor.sh -s SERVER -k KEY 
 #               SERVERS are the host and port information of zk servers, 
-#               like "10.10.1.6:2181"
+#               like "1.1.1.1:2181"
 #               KEY is the project/service name, like "user","transfer"
 #       author: zpf.073@gmail.com
 #         date: 2015-02-06
@@ -50,7 +50,7 @@ fi
 
 PROJECT=$4
 
-ZK_PATH=/home/deployer/pengfei.zhu/zookeeper-3.4.6
+ZK_PATH=/usr/local/zookeeper-3.4.6
 ZK_SHELL_FILE=$ZK_PATH/bin/zkJob.sh
 # read config from zookeeper:
 SERVICE_LIST=`ssh deployer@$ZK_HOST "cd $ZK_PATH/bin; \
@@ -70,7 +70,6 @@ do
 		break
 	fi
 done
-#SERVICE_NUM=`echo $SERVICE_LIST | awk -F , '{print NF}'`
 log info "configured service list:$SERVICE_LIST"
 log info "configured service num:$SERVICE_NUM"
 ALIVE_SERVICE_NUM=0
@@ -80,17 +79,10 @@ PROJECT_SERVER=""
 PROJECT_SERVERS=`ssh deployer@$ZK_HOST "cd $ZK_PATH/bin; \
 	sh $ZK_SHELL_FILE -l /$PROJECT | tail -2 | head -1"`
 
-#echo PROJECT_SERVERS:$PROJECT_SERVERS
 SERVER_NUM=`echo $PROJECT_SERVERS | awk -F , '{print NF}'`
-#echo SERVER_NUM:"`expr $SERVER_NUM - 1`"
-PROJECT_SERVER=""
 
-PROJECT_SERVERS_LEN=${#PROJECT_SERVERS}
 PROJECT_SERVERS_LEN=`expr $PROJECT_SERVERS_LEN - 2`
-#echo PROJECT_SERVERS_LEN:$PROJECT_SERVERS_LEN
-PROJECT_SERVERS="${PROJECT_SERVERS%]}"
 PROJECT_SERVERS=`echo $PROJECT_SERVERS | awk -F [ '{print $2}'`
-#echo PROJECT_SERVERS:$PROJECT_SERVERS
 
 for IND in $( seq 1 $SERVER_NUM )
 do
@@ -98,19 +90,16 @@ do
 	if [ "$PROJECT_SERVER"x = "confx" ];then
 		continue
 	fi
-#	echo PROJECT_SERVER:$PROJECT_SERVER
+
 	PROJECT_PORTS=`ssh deployer@$ZK_HOST "cd $ZK_PATH/bin; \
 			sh $ZK_SHELL_FILE -l /$PROJECT/$PROJECT_SERVER | tail -2 | head -1"`
 	PORT_NUM=`echo $PROJECT_PORTS | awk -F , '{print NF}'`
 	PLAY_PORT_NUM=`echo $PROJECT_PORTS | awk -F , '{for(i=1;i<=NF;i++) print $i}' | grep play | wc -l`
 	ALIVE_SERVICE_NUM=`expr $ALIVE_SERVICE_NUM + $PLAY_PORT_NUM`
 	SERVICE_INFO=""
-#	echo PROJECT_PORTS:$PROJECT_PORTS
-#	echo PORT_NUM:$PORT_NUM
-#	echo PLAY_PORT_NUM:$PLAY_PORT_NUM
 	PROJECT_PORTS="${PROJECT_PORTS%]}"
 	PROJECT_PORTS=`echo $PROJECT_PORTS | awk -F [ '{print $2}'`
-#	echo PROJECT_PORTS:$PROJECT_PORTS
+
 	for PORT_IND in $( seq 1 $PORT_NUM )
 	do
                 SERVICE_INFO=`echo $PROJECT_PORTS | awk -F , '{print $'$PORT_IND'}'`
